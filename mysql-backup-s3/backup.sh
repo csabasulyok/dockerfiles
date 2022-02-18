@@ -40,15 +40,15 @@ fi
 MYSQL_HOST_OPTS="-h $MYSQL_HOST -P $MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD"
 DUMP_START_TIME=$(date +"%Y-%m-%dT%H%M%SZ")
 
+if [ "${S3_ENDPOINT}" == "**None**" ]; then
+  AWS_ARGS=""
+else
+  AWS_ARGS="--endpoint-url ${S3_ENDPOINT}"
+fi
+
 copy_s3 () {
   SRC_FILE=$1
   DEST_FILE=$2
-
-  if [ "${S3_ENDPOINT}" == "**None**" ]; then
-    AWS_ARGS=""
-  else
-    AWS_ARGS="--endpoint-url ${S3_ENDPOINT}"
-  fi
 
   echo "Uploading ${DEST_FILE} on S3..."
 
@@ -108,3 +108,16 @@ else
 fi
 
 echo "SQL backup finished"
+
+# check if we should only retain n files
+if [ "${S3_RETAIN_NUM}" != "" ]; then
+  echo "Rotating backups, retaining only $S3_RETAIN_NUM files"
+  # get older files: head all but last S3_RETAIN_NUM files, and delete them
+  for S3_OLD_BACKUP_FILE in `aws $AWS_ARGS s3 ls s3://$S3_BUCKET/$S3_PREFIX/ | sort | head -n -$S3_RETAIN_NUM | awk '{ print $4 }' | awk 'NF'`;
+  do
+    echo "Deleting stale file $S3_OLD_BACKUP_FILE"
+    aws $AWS_ARGS s3 rm s3://$S3_BUCKET/$S3_PREFIX/$S3_OLD_BACKUP_FILE
+  done
+else
+  echo "Rotating backups not set up, not deleting older backups"
+fi
