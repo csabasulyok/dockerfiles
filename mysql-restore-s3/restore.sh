@@ -2,6 +2,22 @@
 
 set -eo pipefail
 
+# check file variants
+
+if [ "${S3_ACCESS_KEY_ID_FILE}" != "" ]; then
+  export S3_ACCESS_KEY_ID=$(cat ${S3_ACCESS_KEY_ID_FILE})
+fi
+
+if [ "${S3_SECRET_ACCESS_KEY_FILE}" != "" ]; then
+  export S3_SECRET_ACCESS_KEY=$(cat ${S3_SECRET_ACCESS_KEY_FILE})
+fi
+
+if [ "${MYSQL_PASSWORD_FILE}" != "" ]; then
+  export MYSQL_PASSWORD=$(cat ${MYSQL_PASSWORD_FILE})
+fi
+
+# check other env vars
+
 if [ "${S3_ACCESS_KEY_ID}" == "**None**" ]; then
   echo "Warning: You did not set the S3_ACCESS_KEY_ID environment variable."
 fi
